@@ -22,6 +22,7 @@ export default function ApplicationDetailPage() {
   const [editing, setEditing] = useState(false)
   const [editDetail, setEditDetail] = useState<any>(null)
   const [showEscalationModal, setShowEscalationModal] = useState(false)
+  const [supportingDocSrc, setSupportingDocSrc] = useState<{id: number; url: string} | null>(null)
 
   const ESCALATION_REASONS: Record<string, string> = {
     incomplete_docs: 'Incomplete Documentation',
@@ -109,6 +110,34 @@ export default function ApplicationDetailPage() {
     },
   })
 
+  const fieldSections = [
+    {
+      title: 'Personal Details',
+      icon: '👤',
+      fields: ['full_name', 'dob', 'age', 'gender'] as const,
+    },
+    {
+      title: 'Identity & Contact',
+      icon: '🪪',
+      fields: ['pan', 'aadhaar', 'email', 'phone', 'address'] as const,
+    },
+    {
+      title: 'Income & Employment',
+      icon: '💰',
+      fields: ['occupation', 'employer', 'annual_income', 'monthly_income'] as const,
+    },
+    {
+      title: 'Policy Details',
+      icon: '📋',
+      fields: ['policy_type', 'coverage_amount', 'credit_score'] as const,
+    },
+    {
+      title: 'Bank & Nominee',
+      icon: '🏦',
+      fields: ['bank_details', 'nominee'] as const,
+    },
+  ]
+
   const fieldLabels: Record<string, string> = {
     full_name: 'Full Name', dob: 'Date of Birth', age: 'Age', gender: 'Gender',
     pan: 'PAN', aadhaar: 'Aadhaar', address: 'Address', email: 'Email',
@@ -167,8 +196,13 @@ export default function ApplicationDetailPage() {
             <div className="text-4xl mb-3 text-green-500">✓</div>
             <h2 className="text-xl font-semibold mb-2">{actionSuccess}</h2>
             <p className="text-sm text-[var(--text-secondary)] mb-6">The application has been updated.</p>
-            <Button onClick={() => { setActionSuccess(''); navigate('/my-applications') }}>
-              Go to My Applications
+            <Button onClick={() => {
+              setActionSuccess('')
+              if (role === 'APPLICANT') navigate('/my-applications')
+              else if (role === 'SENIOR_MANAGER') navigate('/escalated-cases')
+              else navigate('/pending-reviews')
+            }}>
+              {role === 'APPLICANT' ? 'Go to My Applications' : 'Back to Dashboard'}
             </Button>
           </div>
         </div>
@@ -185,21 +219,61 @@ export default function ApplicationDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left - PDF */}
-        <div>
-          <h2 className="text-lg font-semibold mb-3">Document</h2>
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4 h-[600px] flex items-center justify-center">
-            {pdfSrc ? (
-              <iframe src={pdfSrc} className="w-full h-full rounded-lg" title="PDF" />
-            ) : (
-              <p className="text-[var(--text-secondary)]">No PDF</p>
-            )}
+        {/* Left - PDF & Supporting Documents */}
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold mb-3">Document</h2>
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4 h-[600px] flex items-center justify-center">
+              {pdfSrc ? (
+                <iframe src={pdfSrc} className="w-full h-full rounded-lg" title="PDF" />
+              ) : (
+                <p className="text-[var(--text-secondary)]">No PDF</p>
+              )}
+            </div>
           </div>
+
+          {/* Supporting Documents */}
+          {data.supporting_documents && data.supporting_documents.length > 0 && !isApplicant && (
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4">
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+                Supporting Documents
+              </h3>
+              <div className="space-y-2">
+                {data.supporting_documents.map((doc) => {
+                  const docViewUrl = `/api/applications/${id}/supporting-docs/${doc.id}/view?token=${auth?.access_token}`
+                  return (
+                    <div key={doc.id} className="flex items-center justify-between px-3 py-2 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-secondary)] transition-colors">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                          {doc.doc_type}
+                        </span>
+                        <span className="text-xs text-[var(--text-secondary)]">{doc.filename}</span>
+                      </div>
+                      <button
+                        onClick={() => setSupportingDocSrc({ id: doc.id, url: docViewUrl })}
+                        className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                        View
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right - Details */}
         <div className="space-y-4">
           {/* Enhanced AI Overview — for managers only */}
+          {/* AI Assessment Section - Enhanced Overview for Managers/PMs, Simple Summary for Applicants */}
           {!isApplicant && applicant_details && (
             <EnhancedAiOverview
               details={applicant_details}
@@ -207,12 +281,33 @@ export default function ApplicationDetailPage() {
               risk={risk_assessment}
             />
           )}
-
-          {/* Simple AI Summary — for applicants */}
+          
           {isApplicant && applicant_details?.ai_summary && (
             <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
               <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-1">AI Overview</h3>
               <p className="text-xs text-purple-600 dark:text-purple-400">{applicant_details.ai_summary}</p>
+            </div>
+          )}
+
+          {/* Supporting Doc Viewer Modal */}
+          {supportingDocSrc && (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-3xl h-[80vh] flex flex-col shadow-2xl">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
+                  <h3 className="text-sm font-semibold">Supporting Document</h3>
+                  <button
+                    onClick={() => setSupportingDocSrc(null)}
+                    className="p-1 hover:bg-[var(--bg-secondary)] rounded transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="flex-1 p-2">
+                  <iframe src={supportingDocSrc.url} className="w-full h-full rounded-lg" title="Supporting Doc" />
+                </div>
+              </div>
             </div>
           )}
 
@@ -228,46 +323,63 @@ export default function ApplicationDetailPage() {
             </div>
 
             {applicant_details ? (
-              <div className="space-y-2 text-sm">
-                {Object.entries(fieldLabels).map(([key, label]) => {
-                  if (editing && editDetail) {
-                    const val = editDetail[key]
-                    const flag = localFlags.find((f) => f.field_name === key)
-                    const isSelect = key === 'gender' || key === 'policy_type'
-                    const selectOptions = key === 'gender' ? genderOptions : policyTypeOptions
-                    return (
-                      <div key={key} className="mb-2">
-                        <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">{label}</label>
-                        {isSelect ? (
-                          <select
-                            value={val ?? ''}
-                            onChange={(e) => setEditDetail((prev: any) => ({ ...prev, [key]: e.target.value || null }))}
-                            className={`w-full px-2 py-1.5 text-sm border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 ${flag ? 'border-red-400' : 'border-[var(--border)]'}`}
-                          >
-                            {selectOptions.map((o) => (
-                              <option key={o} value={o}>{o || `Select ${label}`}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            type={key === 'dob' ? 'date' : ['age', 'annual_income', 'monthly_income', 'coverage_amount', 'credit_score'].includes(key) ? 'number' : 'text'}
-                            value={val ?? ''}
-                            onChange={(e) => setEditDetail((prev: any) => ({ ...prev, [key]: e.target.value || null }))}
-                            className={`w-full px-2 py-1.5 text-sm border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 ${flag ? 'border-red-400' : 'border-[var(--border)]'}`}
-                          />
-                        )}
-                        {flag && <p className="text-xs text-red-500 mt-0.5">{flag.message}</p>}
-                      </div>
-                    )
-                  }
-                  const val = (applicant_details as any)[key]
-                  const flag = validation_flags.find((f) => f.field_name === key)
+              <div className="space-y-4 text-sm">
+                {fieldSections.map((section) => {
+                  const sectionFlags = validation_flags.filter((f) => (section.fields as readonly string[]).includes(f.field_name))
+                  const hasSectionErrors = sectionFlags.some(f => !f.resolved)
                   return (
-                    <div key={key} className="flex justify-between border-b border-[var(--border)] pb-1 last:border-0">
-                      <span className="text-[var(--text-secondary)]">{label}</span>
-                      <span className={`font-medium ${flag && !flag.resolved ? 'text-red-500' : ''}`}>
-                        {val ?? <span className="italic text-[var(--text-secondary)]">N/A</span>}
-                      </span>
+                    <div key={section.title} className={`rounded-lg border ${hasSectionErrors ? 'border-red-200 dark:border-red-800' : 'border-[var(--border)]'} overflow-hidden`}>
+                      <div className={`px-3 py-2 font-medium text-xs flex items-center gap-2 ${hasSectionErrors ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)]'}`}>
+                        <span>{section.icon}</span>
+                        <span>{section.title}</span>
+                        {hasSectionErrors && <span className="ml-auto text-red-500">⚠</span>}
+                      </div>
+                      <div className="divide-y divide-[var(--border)]">
+                        {section.fields.map((key) => {
+                          if (editing && editDetail) {
+                            const val = editDetail[key as string]
+                            const flag = localFlags.find((f) => f.field_name === key)
+                            const label = fieldLabels[key as string]
+                            const isSelect = key === 'gender' || key === 'policy_type'
+                            const selectOptions = key === 'gender' ? genderOptions : policyTypeOptions
+                            return (
+                              <div key={key} className="px-3 py-2">
+                                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">{label}</label>
+                                {isSelect ? (
+                                  <select
+                                    value={val ?? ''}
+                                    onChange={(e) => setEditDetail((prev: any) => ({ ...prev, [key as string]: e.target.value || null }))}
+                                    className={`w-full px-2 py-1 text-sm border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 ${flag ? 'border-red-400' : 'border-[var(--border)]'}`}
+                                  >
+                                    {selectOptions.map((o) => (
+                                      <option key={o} value={o}>{o || `Select ${label}`}</option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <input
+                                    type={key === 'dob' ? 'date' : ['age', 'annual_income', 'monthly_income', 'coverage_amount', 'credit_score'].includes(key) ? 'number' : 'text'}
+                                    value={val ?? ''}
+                                    onChange={(e) => setEditDetail((prev: any) => ({ ...prev, [key as string]: e.target.value || null }))}
+                                    className={`w-full px-2 py-1 text-sm border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 ${flag ? 'border-red-400' : 'border-[var(--border)]'}`}
+                                  />
+                                )}
+                                {flag && <p className="text-xs text-red-500 mt-0.5">{flag.message}</p>}
+                              </div>
+                            )
+                          }
+                          const val = (applicant_details as any)[key]
+                          const flag = validation_flags.find((f) => f.field_name === key)
+                          const label = fieldLabels[key as string]
+                          return (
+                            <div key={key} className="flex justify-between px-3 py-2">
+                              <span className="text-[var(--text-secondary)] text-xs">{label}</span>
+                              <span className={`text-xs font-medium ${flag && !flag.resolved ? 'text-red-500' : ''}`}>
+                                {val ?? <span className="italic text-[var(--text-secondary)]">N/A</span>}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
                   )
                 })}

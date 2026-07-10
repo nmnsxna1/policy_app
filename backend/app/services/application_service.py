@@ -14,6 +14,7 @@ from app.repositories.risk_assessment_repository import RiskAssessmentRepository
 from app.repositories.decision_repository import DecisionRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.notification_repository import NotificationRepository
+from app.repositories.supporting_document_repository import SupportingDocumentRepository
 from app.models.application import Application, ApplicationStatus
 from app.models.applicant_detail import ApplicantDetail
 from app.models.risk_assessment import RiskAssessment
@@ -42,6 +43,7 @@ class ApplicationService:
         self.decision_repo = DecisionRepository(db)
         self.user_repo = UserRepository(db)
         self.notif_repo = NotificationRepository(db)
+        self.supporting_doc_repo = SupportingDocumentRepository(db)
         self.audit = AuditService(db)
 
     def generate_application_number(self, policy_type: str | None) -> str:
@@ -393,6 +395,54 @@ class ApplicationService:
     def search_applications(self, query: str) -> list:
         return [self._app_to_list_item(a) for a in self.app_repo.search(query)]
 
+    def advanced_search(self, query: str = "", status: str = "", risk_level: str = "",
+                        policy_type: str = "", date_from: str = "", date_to: str = "") -> list:
+        q = self.db.query(Application)
+
+        if query:
+            q = q.filter(Application.application_number.contains(query))
+
+        if status:
+            try:
+                status_enum = ApplicationStatus(status)
+                q = q.filter(Application.status == status_enum)
+            except ValueError:
+                pass
+
+        if date_from:
+            try:
+                dt_from = datetime.fromisoformat(date_from)
+                q = q.filter(Application.created_at >= dt_from)
+            except (ValueError, TypeError):
+                pass
+
+        if date_to:
+            try:
+                dt_to = datetime.fromisoformat(date_to)
+                q = q.filter(Application.created_at <= dt_to)
+            except (ValueError, TypeError):
+                pass
+
+        apps = q.order_by(Application.created_at.desc()).all()
+
+        results = []
+        for app in apps:
+            item = self._app_to_list_item(app)
+            if risk_level or policy_type:
+                detail = self.detail_repo.get_by_application_id(app.id)
+                risk = self.risk_repo.get_by_application_id(app.id)
+                rl = risk.risk_level.upper() if risk else ""
+                pt = (detail.policy_type or "").upper() if detail else ""
+                if risk_level and rl != risk_level.upper():
+                    continue
+                if policy_type and pt != policy_type.upper():
+                    continue
+                item["risk_level"] = risk.risk_level if risk else None
+                item["policy_type"] = detail.policy_type if detail else None
+            results.append(item)
+
+        return results
+
     def withdraw_application(self, application_id: int, applicant_id: int) -> dict:
         app = self.app_repo.get_by_id(application_id)
         if not app or app.applicant_id != applicant_id:
@@ -498,6 +548,8 @@ class ApplicationService:
             traceback.print_exc()
             raise ValueError("Database error fetching application details")
 
+        supporting_docs = self.supporting_doc_repo.get_by_application_id(app.id)
+
         return {
             "application": {
                 "id": app.id,
@@ -509,6 +561,16 @@ class ApplicationService:
                 "updated_at": app.updated_at.isoformat() if app.updated_at else None,
                 "submitted_at": app.submitted_at.isoformat() if app.submitted_at else None,
             },
+            "supporting_documents": [
+                {
+                    "id": d.id,
+                    "application_id": d.application_id,
+                    "doc_type": d.doc_type,
+                    "filename": d.filename,
+                    "uploaded_at": d.uploaded_at.isoformat() if d.uploaded_at else None,
+                }
+                for d in supporting_docs
+            ],
             "applicant_details": {
                 "id": detail.id,
                 "application_id": detail.application_id,

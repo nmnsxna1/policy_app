@@ -10,6 +10,8 @@ import ApplicationDetailPage from './pages/ApplicationDetailPage'
 import PendingReviews from './pages/PendingReviews'
 import EscalatedCases from './pages/EscalatedCases'
 import Search from './pages/Search'
+import SmartSearch from './pages/SmartSearch'
+import AnalyticsDashboard from './pages/AnalyticsDashboard'
 import ErrorBoundary from './components/ErrorBoundary'
 
 const queryClient = new QueryClient()
@@ -72,7 +74,15 @@ function AppRoutes() {
           path="search"
           element={
             <ProtectedRoute roles={['POLICY_MANAGER', 'SENIOR_MANAGER']}>
-              <Search />
+              <SmartSearch />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="analytics"
+          element={
+            <ProtectedRoute roles={['POLICY_MANAGER', 'SENIOR_MANAGER']}>
+              <AnalyticsDashboard />
             </ProtectedRoute>
           }
         />

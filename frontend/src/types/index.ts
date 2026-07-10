@@ -72,12 +72,21 @@ export interface Decision {
   created_at: string
 }
 
+export interface SupportingDocument {
+  id: number
+  application_id: number
+  doc_type: string
+  filename: string
+  uploaded_at: string
+}
+
 export interface ApplicationDetail {
   application: Application
   applicant_details: ApplicantDetails | null
   validation_flags: ValidationFlag[]
   risk_assessment: RiskAssessment | null
   decisions: Decision[]
+  supporting_documents?: SupportingDocument[]
 }
 
 export interface DashboardData {
@@ -93,4 +102,33 @@ export interface DashboardData {
   applications?: Application[]
   pending_applications?: Application[]
   escalated_applications?: Application[]
+}
+
+export interface AnalyticsDashboardData {
+  total_applications: number
+  submitted_count: number
+  approved_count: number
+  rejected_count: number
+  pending_count: number
+  escalated_count: number
+  draft_count: number
+  approval_rate: number
+  rejection_rate: number
+  avg_risk_score: number
+  risk_distribution: Record<string, number>
+  applications: (Application & { risk_level?: string; risk_score?: number })[]
+}
+
+export interface MonthlyTrend {
+  month: string
+  submitted: number
+  approved: number
+  rejected: number
+  total: number
+}
+
+export interface RiskDistribution {
+  labels: string[]
+  values: number[]
+  percentages: number[]
 }

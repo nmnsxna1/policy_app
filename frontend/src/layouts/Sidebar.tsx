@@ -11,12 +11,14 @@ const navItems = {
   POLICY_MANAGER: [
     { to: '/dashboard', label: 'Dashboard', icon: '📊' },
     { to: '/pending-reviews', label: 'Pending Reviews', icon: '⏳' },
-    { to: '/search', label: 'Search', icon: '🔍' },
+    { to: '/search', label: 'Smart Search', icon: '🔍' },
+    { to: '/analytics', label: 'Analytics', icon: '📈' },
   ],
   SENIOR_MANAGER: [
     { to: '/dashboard', label: 'Dashboard', icon: '📊' },
     { to: '/escalated-cases', label: 'Escalated Cases', icon: '🚨' },
-    { to: '/search', label: 'Search', icon: '🔍' },
+    { to: '/search', label: 'Smart Search', icon: '🔍' },
+    { to: '/analytics', label: 'Analytics', icon: '📈' },
   ],
 }
 

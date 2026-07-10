@@ -1,12 +1,6 @@
 import { useMemo } from 'react'
 import type { ApplicantDetails, ValidationFlag, RiskAssessment } from '../types'
 
-interface Props {
-  details: ApplicantDetails | null
-  flags: ValidationFlag[]
-  risk: RiskAssessment | null
-}
-
 interface AssessmentMetrics {
   completeness: { filled: number; total: number; percent: number }
   incomeHealth: { ratio: number | null; status: string; detail: string }
@@ -21,8 +15,12 @@ const REQUIRED_FIELDS = [
   'coverage_amount', 'policy_type',
 ]
 
-export default function EnhancedAiOverview({ details, flags, risk }: Props) {
-  const assessment: AssessmentMetrics = useMemo(() => {
+export default function EnhancedAiOverview({ details, flags, risk }: {
+  details: ApplicantDetails | null
+  flags: ValidationFlag[]
+  risk: RiskAssessment | null
+}) {
+  const assessment = useMemo(() => {
     if (!details) {
       return {
         completeness: { filled: 0, total: REQUIRED_FIELDS.length, percent: 0 },
@@ -41,27 +39,27 @@ export default function EnhancedAiOverview({ details, flags, risk }: Props) {
 
     const annualIncome = details.annual_income ? Number(details.annual_income) : null
     const coverageAmount = details.coverage_amount ? Number(details.coverage_amount) : null
-    let ratio: number | null = null
+    let ratio = null
     let incomeStatus = 'unknown'
     let incomeDetail = 'Income data not available'
     if (annualIncome && coverageAmount && annualIncome > 0) {
       ratio = coverageAmount / annualIncome
       if (ratio > 10) {
         incomeStatus = 'critical'
-        incomeDetail = `Coverage is ${ratio.toFixed(1)}x annual income (exceeds 10x limit)`
+        incomeDetail = 'Coverage is ' + ratio.toFixed(1) + 'x annual income (exceeds 10x limit)'
       } else if (ratio > 5) {
         incomeStatus = 'warning'
-        incomeDetail = `Coverage is ${ratio.toFixed(1)}x annual income (moderate)`
+        incomeDetail = 'Coverage is ' + ratio.toFixed(1) + 'x annual income (moderate)'
       } else {
         incomeStatus = 'good'
-        incomeDetail = `Coverage is ${ratio.toFixed(1)}x annual income (within limits)`
+        incomeDetail = 'Coverage is ' + ratio.toFixed(1) + 'x annual income (within limits)'
       }
     } else if (annualIncome) {
-      incomeDetail = `Annual income: ₹${annualIncome.toLocaleString()}`
+      incomeDetail = 'Annual income: ₹' + annualIncome.toLocaleString()
     }
 
     const creditScore = details.credit_score ? Number(details.credit_score) : null
-    let creditStatus: { score: number | null; status: string } = { score: null, status: 'unknown' }
+    let creditStatus = { score: null, status: 'unknown' }
     if (creditScore !== null) {
       if (creditScore >= 750) creditStatus = { score: creditScore, status: 'excellent' }
       else if (creditScore >= 700) creditStatus = { score: creditScore, status: 'good' }
@@ -74,15 +72,15 @@ export default function EnhancedAiOverview({ details, flags, risk }: Props) {
       .map((f) => ({ field: f.field_name, message: f.message, severity: f.severity }))
 
     if (details.annual_income && Number(details.annual_income) < 200000) {
-      riskFactors.push({ field: 'annual_income', message: 'Annual income below ₹2,00,000 threshold', severity: 'ERROR' })
+      riskFactors.push({ field: 'annual_income', message: 'Annual income below ₹ 2,00,000 threshold', severity: 'ERROR' })
     }
     if (details.age && (Number(details.age) < 21 || Number(details.age) > 60)) {
-      riskFactors.push({ field: 'age', message: `Age ${details.age} is outside 21-60 range`, severity: 'ERROR' })
+      riskFactors.push({ field: 'age', message: 'Age ' + details.age + ' is outside 21-60 range', severity: 'ERROR' })
     }
 
-    let overallLabel: string
-    let overallColor: string
-    let overallDesc: string
+    let overallLabel
+    let overallColor
+    let overallDesc
 
     const hasCriticalFlags = riskFactors.length > 0
     const hasRiskLevel = risk?.risk_level === 'HIGH'
@@ -92,7 +90,7 @@ export default function EnhancedAiOverview({ details, flags, risk }: Props) {
       overallLabel = 'Needs Review'
       overallColor = 'red'
       overallDesc = hasCriticalFlags
-        ? `${riskFactors.length} validation error(s) require attention`
+        ? riskFactors.length + ' validation error(s) require attention'
         : 'High risk assessment — needs manager review'
     } else if (hasMediumRisk) {
       overallLabel = 'Caution'
@@ -123,7 +121,7 @@ export default function EnhancedAiOverview({ details, flags, risk }: Props) {
 
   if (!details) return null
 
-  const colorClasses: Record<string, { bg: string; text: string; border: string; badge: string }> = {
+  const colorClasses = {
     green: { bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-700 dark:text-green-300', border: 'border-green-200 dark:border-green-800', badge: 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200' },
     red: { bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-300', border: 'border-red-200 dark:border-red-800', badge: 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200' },
     yellow: { bg: 'bg-yellow-50 dark:bg-yellow-900/20', text: 'text-yellow-700 dark:text-yellow-300', border: 'border-yellow-200 dark:border-yellow-800', badge: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200' },
@@ -136,7 +134,7 @@ export default function EnhancedAiOverview({ details, flags, risk }: Props) {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold flex items-center gap-2">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 1-6.23.693L5 14.5" />
           </svg>
           AI Assessment
         </h3>

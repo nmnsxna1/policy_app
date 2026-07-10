@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.database import engine, Base, SessionLocal
 from app.services.auth_service import AuthService
-from app.routers import auth, applications, notifications
+from app.routers import auth, applications, notifications, analytics
 import app.models  # noqa — ensures all models are loaded for create_all
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout, force=True)
@@ -26,6 +26,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(applications.router)
 app.include_router(notifications.router)
+app.include_router(analytics.router)
 
 try:
     app.mount("/uploads", StaticFiles(directory="./uploads"), name="uploads")
@@ -49,4 +50,4 @@ def health():
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, use_colors=False)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, use_colors=False, log_level="info")

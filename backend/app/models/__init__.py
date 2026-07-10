@@ -6,6 +6,7 @@ from app.models.risk_assessment import RiskAssessment
 from app.models.decision import Decision
 from app.models.audit_log import AuditLog
 from app.models.notification import Notification
+from app.models.supporting_document import SupportingDocument
 
 __all__ = [
     "User",
@@ -16,4 +17,5 @@ __all__ = [
     "Decision",
     "AuditLog",
     "Notification",
+    "SupportingDocument",
 ]

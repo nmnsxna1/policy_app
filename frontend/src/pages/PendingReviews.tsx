@@ -23,7 +23,7 @@ export default function PendingReviews() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Pending Reviews</h1>
+      <h1 className="text-2xl font-bold">PolicyPilotAI - Pending Reviews</h1>
 
       {apps.length === 0 ? (
         <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-8 text-center text-[var(--text-secondary)]">
