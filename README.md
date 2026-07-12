@@ -134,7 +134,7 @@ Opens at `http://localhost:5173`.
 │   │   ├── core/               # Config, DB, security
 │   │   ├── docling/            # PDF text extraction
 │   │   ├── models/             # SQLAlchemy models
-│   │   ├── notifications/      # Email service (Brevo API + SMTP)
+│   │   ├── notifications/      # Email service (Brevo API)
 │   │   ├── repositories/       # DB access layer
 │   │   ├── risk/               # Risk assessment engine
 │   │   ├── routers/            # FastAPI route handlers

@@ -488,7 +488,7 @@ class ApplicationService:
         self.decision_repo.create(decision)
         self.audit.log(manager_id, application_id, f"{decision_type}", new_value=reason)
 
-        # Send email in background thread
+        # Send notifications in background threads
         detail = self.detail_repo.get_by_application_id(application_id)
         if detail and detail.email:
             send_decision_email(

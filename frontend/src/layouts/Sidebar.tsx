@@ -28,8 +28,9 @@ export default function Sidebar() {
 
   return (
     <aside className="w-64 bg-[var(--bg-card)] border-r border-[var(--border)] min-h-screen p-4 flex flex-col">
-      <div className="text-xl font-bold mb-8 px-3 text-blue-600">
-        PolicyPortal
+      <div className="mb-8 px-3">
+        <div className="text-lg font-bold text-blue-600 dark:text-blue-400">PolicyPilotAI</div>
+        <div className="text-[10px] text-[var(--text-secondary)]">by Sxna Technologies</div>
       </div>
       <nav className="flex-1 space-y-1">
         {items.map((link) => (
